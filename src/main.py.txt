@@ -1,0 +1,717 @@
+import os
+import pandas as pd
+
+from sklearn.impute import SimpleImputer
+import numpy as np
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+import plotly.graph_objects as go
+import plotly.subplots as sp
+
+from PIL import Image
+
+# ----------------- input data ----------------- #
+# define the file path
+file_path = os.path.join(os.pardir, "data", "EVDatabase2023.csv")
+
+# load the data
+data = pd.read_csv(file_path)
+data = pd.DataFrame(data)
+
+# load the figure
+image_path = os.path.join(os.pardir, "output", "Figure_2.png")
+image1 = Image.open(image_path)
+
+image_path = os.path.join(os.pardir, "output", "Figure_5.png")
+image2 = Image.open(image_path)
+
+image_path = os.path.join(os.pardir, "output", "Figure_7.png")
+image3 = Image.open(image_path)
+
+image_path = os.path.join(os.pardir, "output", "Figure_12.png")
+image4 = Image.open(image_path)
+
+image_path = os.path.join(os.pardir, "output", "Figure_13.png")
+image5 = Image.open(image_path)
+
+image_path = os.path.join(os.pardir, "output", "Figure_3.png")
+image6 = Image.open(image_path)
+
+image_path = os.path.join(os.pardir, "output", "Figure_4.png")
+image7 = Image.open(image_path)
+
+image_path = os.path.join(os.pardir, "output", "Figure_8.png")
+image8 = Image.open(image_path)
+
+# ----------------- data pre-processing ----------------- #
+# check NaN values in data
+data_NaN_Check = data.isnull().sum()
+print("NaN check", data_NaN_Check)
+
+# replace NaN values using imputation
+# call Simple Imputation
+impute = SimpleImputer(missing_values=np.nan, strategy='most_frequent')
+impute.fit(data.iloc[:, -3:-1])
+data.iloc[:, -3:-1] = impute.transform(data.iloc[:, -3:-1].values)
+
+print("Data Head", data.head())
+
+# check NaN values in data
+data_NaN_Check = data.isnull().sum()
+print("NaN Check", data_NaN_Check)
+
+
+# ----------------- functions ----------------- #
+# functions
+def convert_char_2_float(in_char_column, value):
+    """this function takes in non-numeric character column as input and string value inside it to be converted to
+    float and return out_float column with floating point numbers"""
+    out_float = in_char_column.str.split().str[value].astype(float)
+    return out_float
+
+
+def convert_currency_2_float(in_currency_column):
+    """this function removes any currency symbol from price column for processing"""
+    in_currency_column = in_currency_column.str.replace(',', '').astype(str)
+    out_float = in_currency_column.str.replace(r'[^0-9.]+', '', regex=True).astype(float)
+    return out_float
+
+
+# ----------------- calculations ----------------- #
+# data calculations
+# average and max battery energy
+data['Battery Energy'] = convert_char_2_float(data['Battery Energy'], 0)
+print(data['Battery Energy'])
+average_battery_energy = data['Battery Energy'].mean()
+max_battery_energy = data['Battery Energy'].max()
+index_max_battery_energy = data['Battery Energy'].index[data['Battery Energy'] == max_battery_energy][0]
+car_name_max_battery_energy = data['Name'].loc[index_max_battery_energy]
+print("Average Battery Energy of EV is: ", average_battery_energy, 'kWh')
+print("EV with maximum Battery Energy is: ", car_name_max_battery_energy, "with battery energy of: ",
+      max_battery_energy, "KWh")
+
+# name of car with the highest top speed
+data['TopSpeed'] = convert_char_2_float(data['TopSpeed'], 0)
+car_with_highest_top_speed = data['TopSpeed'].max()
+index_car_with_highest_top_speed = data['TopSpeed'].index[data['TopSpeed'] == car_with_highest_top_speed]
+car_name_with_top_speed = data['Name'].loc[index_car_with_highest_top_speed]
+print("Max speed of the EV is: ", car_with_highest_top_speed, "km/h")
+print("EV name with max top speed is: ", car_name_with_top_speed)
+
+# name of car with max range
+data['Range'] = convert_char_2_float(data['Range'], 0)
+car_with_max_range = data['Range'].max()
+index_car_with_max_range = data['Range'].index[data['Range'] == car_with_max_range][0]
+car_name_with_max_range = data['Name'].loc[index_car_with_max_range]
+print("Name of the max range EV is: ", car_name_with_max_range, ", the range is: ", car_with_max_range, "Km")
+
+# max no of seat and car name
+max_seats = data['NumberofSeats'].max()
+print('Maximum number of seat is: ', max_seats)
+index_max_seats = data['NumberofSeats'].index[data['NumberofSeats'] == max_seats]
+car_name_with_max_seats = data['Name'].loc[index_max_seats]
+total_cars_with_max_seats = len(car_name_with_max_seats)
+print("List of EV with max seats: ", car_name_with_max_seats)
+print("Total number of EV with max seats is: ", total_cars_with_max_seats)
+
+# price range of cars in Germany
+data_price_in_germany_float = convert_currency_2_float(data['PriceinGermany'])
+min_price_germany = min(data_price_in_germany_float)
+index_min_price_germany = data_price_in_germany_float.index[data_price_in_germany_float == min_price_germany][0]
+name_min_price_car_germany = data['Name'].loc[index_min_price_germany]
+price_min_price_car_germany = data['PriceinGermany'].loc[index_min_price_germany]
+print("Name of least expensive EV in Germany is: ", name_min_price_car_germany, "and its price is",
+      price_min_price_car_germany)
+
+max_price_germany = max(data_price_in_germany_float)
+index_max_price_germany = data_price_in_germany_float.index[data_price_in_germany_float == max_price_germany][0]
+name_max_price_car_germany = data['Name'].loc[index_max_price_germany]
+price_max_price_car_germany = data['PriceinGermany'].loc[index_max_price_germany]
+print("Name of most expensive EV in Germany is: ", name_max_price_car_germany, "and its price is",
+      price_max_price_car_germany)
+price_range_germany = max_price_germany - min_price_germany
+print("The price range of EV in Germany is: ", '\u20AC', price_range_germany)
+
+# which carmaker have the highest number of cars in market
+total_counts_makers = data['Maker'].value_counts()
+max_maker_count = total_counts_makers.max()
+index_max_maker_count = total_counts_makers.index[total_counts_makers == max_maker_count]
+name_max_maker_count = index_max_maker_count[0]
+print("Car Maker that makes maximum models of EV is: ", name_max_maker_count)
+
+# Market share of Mercedes
+total_number_models = data['Maker'].count()
+total_number_mercedes = data['Maker'][data['Maker'] == 'Mercedes'].count()
+market_share_mercedes = (total_number_mercedes / total_number_models) * 100
+market_share_mercedes = round(market_share_mercedes, 2)
+
+# distribution of availability of cars in market
+available = []
+count_available = 0
+count_expected = 0
+
+for i in data['Availability']:
+    string_check = "Available"
+    if string_check in i:
+        available.append(True)
+        count_available += 1
+    else:
+        available.append(False)
+        count_expected += 1
+
+available_plot_data = [count_available, count_expected]
+
+# number of each drive type
+front_wheel_drive = 0
+rear_wheel_drive = 0
+all_wheel_drive = 0
+
+for i in data['Drive']:
+    string_check_front = "Front"
+    string_check_rear = "Rear"
+    string_check_all = "All"
+    if string_check_front in i:
+        front_wheel_drive += 1
+    if string_check_rear in i:
+        rear_wheel_drive += 1
+    if string_check_all in i:
+        all_wheel_drive += 1
+
+drivetrain_type = [front_wheel_drive, rear_wheel_drive, all_wheel_drive]
+
+# average price of car per maker
+string_maker_list = data['Maker'].unique()
+string_avg_price_maker = []
+
+for maker in string_maker_list:
+    maker_data = data[data['Maker'] == maker]
+    price_maker = maker_data['PriceinGermany']
+    avg_price_maker = convert_currency_2_float(price_maker).mean()
+    avg_price_maker = round(avg_price_maker, 2)
+    string_avg_price_maker.append(avg_price_maker)
+
+# distribution of cars per manufacturers and its availability in market
+# create a new subgroup in data
+data['group_name_availability'] = data['Availability'].apply(
+    lambda x: 'Available' if 'available' in x.lower() else 'Expected')
+manufacturers_availability = data.groupby(["Maker", "group_name_availability"]).size().reset_index(name='Count')
+print("Manufacturer Group by data", manufacturers_availability)
+
+# correlations between different parameters
+# correlation between battery energy and top speed
+correlation_battery_energy_speed = data['Battery Energy'].corr(data['TopSpeed'])
+print("correlation of battery energy with TopSpeed", correlation_battery_energy_speed)
+
+# correlation between top speed and range
+correlation_speed_range = data['TopSpeed'].corr(data['Range'])
+print("correlation of top speed and range", correlation_speed_range)
+
+# correlation between range and efficiency
+data['Efficiency'] = convert_char_2_float(data['Efficiency'], 0)
+correlation_range_efficiency = data['Range'].corr(data['Efficiency'])
+print("correlation of range and efficiency", correlation_range_efficiency)
+
+# correlation between range and battery capacity
+correlation_range_capacity = data['Range'].corr(data['Battery Energy'])
+print("correlation of range and battery capacity", correlation_range_capacity)
+
+# correlation between price and battery capacity
+correlation_price_capacity = data_price_in_germany_float.corr(data['Battery Energy'])
+print("correlation of price and efficiency", correlation_price_capacity)
+
+# ----------------- plots ----------------- #
+# plot of carmakers number of cars
+plt.figure(figsize=(10, 6))
+sns.barplot(x=total_counts_makers.index, y=total_counts_makers.values)
+plt.xlabel("Car Maker Name")
+plt.ylabel("Number of Cars by specific Car Maker Organization")
+plt.title("Number of Cars per Car Makers")
+plt.xticks(rotation=90)
+plt.tight_layout()
+plt.annotate(f"Market Share (Mercedes): {market_share_mercedes}%", xy=(0.85, 0.95), xycoords='axes fraction',
+             ha='center', va='center')
+
+# plot of correlation between battery capacity and top speed
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x=data['Battery Energy'], y=data['TopSpeed'])
+plt.xlabel("Battery Capacity (KWh)")
+plt.ylabel("Top Speed (Km/h) ")
+plt.title("Correlation between Battery Capacity and Top Speed")
+plt.xticks(rotation=90)
+plt.tight_layout()
+plt.annotate(f"Correlation Factor: {correlation_battery_energy_speed}", xy=(0.2, 0.95), xycoords='axes fraction',
+             ha='center', va='center')
+
+# plot number of available cars in market
+plt.figure(figsize=(10, 6))
+palette_color = sns.color_palette('pastel')[0:5]
+available_plot_label = ["Available in Market", "Expected to be launched in 2023"]
+plt.pie(available_plot_data, labels=available_plot_label, colors=palette_color, autopct='%.0f%%')
+plt.title("Available EV's in market and expected to release in 2023")
+
+# plot of available cars in market per maker
+plt.figure(figsize=(10, 8))
+sns.barplot(x="Maker", y="Count", hue='group_name_availability', data=manufacturers_availability)
+plt.xlabel("Car Maker")
+plt.ylabel("Number of Models")
+plt.title("Availability of EV's in market per Maker")
+plt.xticks(rotation=90)
+plt.legend(title="Availability in Market")
+
+# plot of correlation between range and top speed
+plt.figure(figsize=(10, 6))
+palette_color = sns.color_palette('muted')[0:5]
+sns.scatterplot(x=data['Range'], y=data['TopSpeed'], hue=data['Drive'], color=palette_color)
+plt.xlabel("Range (Km)")
+plt.ylabel("Top Speed (Km/h) ")
+plt.title("Correlation between Range and Top Speed")
+plt.xticks(rotation=90)
+plt.tight_layout()
+plt.annotate(f"Correlation Factor: {correlation_speed_range}", xy=(0.2, 0.95), xycoords='axes fraction', ha='center',
+             va='center')
+
+# plot of  relationship between drive type and top speed
+plt.figure(figsize=(10, 6))
+palette_color = sns.color_palette('bright')[0:5]
+sns.scatterplot(x=data['Drive'], y=data['TopSpeed'])
+plt.xlabel("Drive type")
+plt.ylabel("Top Speed (Km/h) ")
+plt.title("Correlation between Drive Type and Top Speed")
+plt.xticks(rotation=0)
+plt.tight_layout()
+
+# plot of  relationship between range and efficiency
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x=data['Efficiency'], y=data['Range'], hue=data['Drive'], color=palette_color)
+plt.xlabel("Efficiency (Wh/Km)")
+plt.ylabel("Range (Km)")
+plt.title("Correlation between Range and Efficiency")
+plt.xticks(rotation=0)
+plt.tight_layout()
+plt.annotate(f"Correlation Factor: {correlation_range_efficiency}", xy=(0.5, 0.95), xycoords='axes fraction',
+             ha='center', va='center')
+
+# plot of drivetrain distribution
+plt.figure(figsize=(10, 6))
+palette_color = sns.color_palette('pastel')[0:5]
+plt.pie(drivetrain_type, labels=["Front Wheel", "Rear Wheel", "All Wheel"], colors=palette_color, autopct='%.0f%%')
+plt.title("Available EV's in market per Drivetrain type")
+
+# plot the prices of car based upon number of seats
+plt.figure(figsize=(10, 6))
+palette_color = sns.color_palette('pastel')[0:5]
+sns.boxplot(x=data['NumberofSeats'].values, y=data_price_in_germany_float, palette=palette_color)
+plt.xlabel("Number of Seats")
+plt.ylabel("Price of Car in '\u20AC'")
+plt.title("Variation in Price of Car based upon Number of Seats")
+plt.xticks(rotation=0)
+plt.tight_layout()
+
+# plot average price of car per maker
+plt.figure(figsize=(10, 6))
+sns.barplot(x=string_maker_list, y=string_avg_price_maker)
+plt.xlabel("Car Maker")
+plt.ylabel("Average Price in '\u20AC'")
+plt.title("Average price of EV's from different Car Makers")
+plt.xticks(rotation=90)
+
+# plot to compare the efficiency of cars based on drivetrain type
+plt.figure(figsize=(10, 6))
+sns.violinplot(x=data['Efficiency'], y=data['Drive'])
+plt.xlabel("Efficiency of EV in (Wh/Km)")
+plt.ylabel("Drivetrain type")
+plt.title("Efficiency of EV based upon drivetrain type")
+plt.xticks(rotation=0)
+plt.tight_layout()
+
+# plot to compare the correlation between battery capacity and range
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x=data['Battery Energy'], y=data['Range'], hue=data['Drive'])
+plt.xlabel("Battery Capacity (KWh)")
+plt.ylabel("Range (Km)")
+plt.title("Correlation between Range and Battery Capacity")
+plt.xticks(rotation=0)
+plt.tight_layout()
+plt.annotate(f"Correlation Factor: {correlation_range_capacity}", xy=(0.5, 0.95), xycoords='axes fraction',
+             ha='center', va='center')
+
+# plot to compare the correlation between battery capacity and price
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x=data['Battery Energy'], y=data['PriceinGermany'], hue=data['Drive'])
+plt.xlabel("Battery Capacity (KWh)")
+plt.ylabel("Average Price in '\u20AC'")
+plt.title("Correlation between Price and Battery Capacity")
+plt.xticks(rotation=0)
+n = 5  # Number of tick labels to display
+y_ticks = plt.yticks()[0]
+step = len(y_ticks) // n
+plt.yticks(y_ticks[::step])
+plt.tight_layout()
+plt.annotate(f"Correlation Factor: {correlation_price_capacity}", xy=(0.5, 0.98), xycoords='axes fraction',
+             ha='center', va='center')
+
+#plt.show(block=True)
+
+# ----------------- figures: plotly ----------------- #
+# plot of carmakers number of cars
+fig_car_number = go.Figure(data=go.Bar(x=total_counts_makers.index, y=total_counts_makers.values,
+                                       marker=dict(color=total_counts_makers.values, coloraxis="coloraxis")))
+fig_car_number.update_layout(
+    title="Number of Cars per Car Makers",
+    xaxis_title="Car Maker Name",
+    yaxis_title="Number of Cars by specific Car Maker Organization",
+    xaxis_tickangle=-90,
+    coloraxis=dict(colorscale="Magma", colorbar=dict(len=0.95, y=0.95, yanchor='top', orientation='v')),
+)
+fig_car_number.add_annotation(
+    x=0.85,
+    y=0.95,
+    xref='paper',
+    yref='paper',
+    text=f"Market Share (Mercedes): {market_share_mercedes}%",
+    showarrow=False,
+    font=dict(size=16),
+)
+fig_car_number.show()
+
+# plot average price of car per maker
+fig_avg_price = go.Figure(data=go.Bar(x=string_maker_list, y=string_avg_price_maker,
+                                      marker=dict(color=string_avg_price_maker, coloraxis="coloraxis")))
+fig_avg_price.update_layout(
+    title="Average price of EV's from different Car Makers",
+    xaxis_title="Car Maker",
+    yaxis_title="Average Price in €",
+    xaxis_tickangle=-90,
+    coloraxis=dict(colorscale="Magma", colorbar=dict(len=0.95, y=0.95, yanchor='top', orientation='v')),
+)
+fig_avg_price.show()
+
+# plot of drivetrain distribution
+labels = ["Front Wheel", "Rear Wheel", "All Wheel"]
+values = drivetrain_type
+colors = ['lightblue', 'lightgreen', 'lightpink']
+fig_drive_distr = go.Figure(data=[go.Pie(labels=labels, values=values, marker=dict(colors=colors))])
+fig_drive_distr.update_traces(hoverinfo='label+percent', textinfo='percent', textfont_size=14,
+                              marker=dict(line=dict(color='#000000', width=1)))
+fig_drive_distr.update_layout(title="Available EV's in market per Drivetrain type")
+fig_drive_distr.show()
+
+# plot of  relationship between drive type and top speed
+fig_rel_drive_speed = go.Figure(data=go.Scatter(x=data['Drive'], y=data['TopSpeed'], mode='markers'))
+fig_rel_drive_speed.update_layout(
+    title="Correlation between Drivetrain Type and Top Speed",
+    xaxis_title="Drive type",
+    yaxis_title="Top Speed (Km/h)",
+    xaxis_tickangle=0,
+    margin=dict(t=80, r=40, b=40, l=40),
+)
+fig_rel_drive_speed.show()
+
+# plot to compare the efficiency of cars based on drivetrain type
+colors = ['rgba(255, 0, 0, 0.5)', 'rgba(0, 255, 0, 0.5)',
+          'rgba(0, 0, 255, 0.5)']  # Specify colors for each drivetrain type
+fig_efcy_drive = go.Figure(
+    data=go.Violin(y=data['Efficiency'].values, x=data['Drive'].values, box_visible=True, meanline_visible=True))
+fig_efcy_drive.update_layout(
+    title="Efficiency of EV based upon drivetrain type",
+    yaxis_title="Efficiency of EV (Wh/Km)",
+    xaxis_title="Drivetrain type",
+    xaxis_tickangle=0,
+    margin=dict(t=80, r=40, b=40, l=40),
+)
+fig_efcy_drive.show()
+
+# plot number of available cars in market
+fig_car_available = go.Figure(data=go.Pie(
+    labels=["Available in Market", "Expected to be launched in 2023"],
+    values=available_plot_data,
+    marker=dict(colors=['#FFC0CB', '#87CEFA']),
+    textinfo='label+percent',
+    hole=0.4,
+    showlegend=False
+))
+fig_car_available.update_layout(
+    title="Available EV's in market and expected to release in 2023",
+    template='plotly_dark'
+)
+fig_car_available.show()
+
+# ----------------- dashboard - 1 ----------------- #
+dashboard1 = sp.make_subplots(rows=2, cols=1, subplot_titles=['Number of Cars per Car Makers',
+                                                              'Average price of EVs from different Car Makers'])
+
+dashboard1.add_trace(fig_car_number['data'][0], row=1, col=1)
+dashboard1.add_trace(fig_avg_price['data'][0], row=2, col=1)
+
+dashboard1.update_xaxes(title_text="Car Maker", row=1, col=1)
+dashboard1.update_yaxes(title_text="Number of Cars", row=1, col=1)
+
+dashboard1.update_xaxes(title_text="Car Maker", row=2, col=1)
+dashboard1.update_yaxes(title_text="Average Price in €", row=2, col=1)
+
+dashboard1.add_annotation(
+    x=0.1,
+    y=0.5,
+    text="Data confirms that the Mercedes is the Market Leader in terms of most number of EV models per "
+         "maker, it holds 12.3% of total market <br> share, with 38 EV models launched or to be launched in 2023. The average price"
+         " of EV's from Mercedes lands around €85k. The most expensive<br>  EV comes from Rolls-Royce, priced at €400k, the most "
+         "affordable ones comes from Dacia and Smart EQ priced around €25k ",
+    showarrow=False,
+    font=dict(size=14, color='Gold'),
+    xref="paper",
+    yref="paper"
+)
+
+dashboard1.update_layout(
+    title='EV Market Analysis - Dashboard 1',
+    height=1400,
+    showlegend=True,
+    template='plotly_dark',
+    autosize=True,
+    legend=dict(
+        x=1.1,
+        y=1.05,
+        orientation='h',
+        bgcolor='rgba(0,0,0,0)',
+        xanchor='right',
+        yanchor='top'
+    )
+)
+
+dashboard1.show()
+
+dashboard1.write_html('dashboard1.html')
+
+# ----------------- dashboard - 2 ----------------- #
+dashboard2 = sp.make_subplots(rows=2, cols=1, subplot_titles=[
+    "Correlation between Drivetrain Type and Top Speed",
+    "Efficiency of EV based upon drivetrain type"
+])
+
+dashboard2.add_trace(fig_rel_drive_speed['data'][0], row=1, col=1)
+dashboard2.add_trace(fig_efcy_drive['data'][0], row=2, col=1)
+
+dashboard2.update_xaxes(title_text="Drivetrain Type", row=1, col=1)
+dashboard2.update_yaxes(title_text="Top Speed (Km/h)", row=1, col=1)
+
+dashboard2.update_xaxes(title_text="Drivetrain Type", row=2, col=1)
+dashboard2.update_yaxes(title_text="Efficiency of EV (Wh/Km)", row=2, col=1)
+
+dashboard2.add_annotation(
+    x=0.1,
+    y=0.5,
+    text="From the data it can be observed that All Wheel Drivetrain is able to achieve exceptionally high speeds, "
+         "this is due to the fact that power<br> is distributed to all four wheels. This also allows good traction and handling."
+         "On other hand with Front Wheel Drivetrain the top speeds are low,<br> due to the less balanced weight distribution "
+         "it has tendency to understeer at high speeds. Rear Wheel Drivetrain are better than Front Wheel<br> Drivetrain in "
+         "terms of top speed. But, Front Wheel Drivetrain have better efficiency than other drivetrain system due to the<br> "
+         "fact that these vehicles are lighter (because of less mechanical/electronic/electrical parts) and hence are more fuel-efficient",
+    showarrow=False,
+    font=dict(size=14, color='Red'),
+    xref="paper",
+    yref="paper"
+)
+
+dashboard2.update_layout(
+    title='EV Market Analysis - Dashboard 2',
+    height=1400,
+    showlegend=True,
+    template='ggplot2',
+    autosize=True,
+    legend=dict(
+        x=1.1,
+        y=1.05,
+        orientation='h',
+        bgcolor='rgba(0,0,0,0)',
+        xanchor='right',
+        yanchor='top'
+    )
+)
+
+dashboard2.show()
+dashboard2.write_html('dashboard2.html')
+
+# ----------------- dashboard - 3 ----------------- #
+# Create the Plotly figure
+dashboard3 = go.Figure()
+
+# Add the image trace
+dashboard3.add_layout_image(
+    source=image1,
+    xref="x",
+    yref="y",
+    x=-1,  # X coordinate of the image
+    y=4,  # Y coordinate of the image
+    sizex=3.5,  # Width of the image
+    sizey=4,  # Height of the image
+    sizing="contain",
+    opacity=1.0,
+    layer="below"
+)
+
+dashboard3.add_layout_image(
+    source=image2,
+    xref="x",
+    yref="y",
+    x=2.5,  # X coordinate of the image
+    y=4,  # Y coordinate of the image
+    sizex=3.5,  # Width of the image
+    sizey=4,  # Height of the image
+    sizing="contain",
+    opacity=1.0,
+    layer="below"
+)
+
+dashboard3.add_layout_image(
+    source=image3,
+    xref="x",
+    yref="y",
+    x=-1,  # X coordinate of the image
+    y=2.1,  # Y coordinate of the image
+    sizex=3.5,  # Width of the image
+    sizey=4,  # Height of the image
+    sizing="contain",
+    opacity=1.0,
+    layer="below"
+)
+
+dashboard3.add_layout_image(
+    source=image4,
+    xref="x",
+    yref="y",
+    x=2.5,  # X coordinate of the image
+    y=2.1,  # Y coordinate of the image
+    sizex=3.5,  # Width of the image
+    sizey=4,  # Height of the image
+    sizing="contain",
+    opacity=1.0,
+    layer="below"
+)
+
+# Update layout if needed
+dashboard3.update_layout(
+    title='EV Market Analysis - Dashboard 3',
+    height=1200,
+    showlegend=True,
+    template='plotly_dark',
+    autosize=True,
+    xaxis=dict(showgrid=False),
+    yaxis=dict(showgrid=False),
+    legend=dict(
+        x=1.1,
+        y=1.05,
+        orientation='h',
+        bgcolor='rgba(0,0,0,0)',
+        xanchor='right',
+        yanchor='top'
+    )
+)
+
+
+text1 = """
+Battery Capacity and Top Speed seems to have a strong correlation, which points towards larger battery size EV's reaching
+higher top speeds. This is mere coincidence as actual<br> factors influencing top speeds of vehicle are power and efficiency 
+of electric motors and its gear ratio and aerodynamics of the vehicle.<br> Data also suggests a strong correlation b/w top speed 
+and range. It can also be inferred that most Front Wheel Drive are designed with smaller battery to reduce the weight<br>
+and costs which have direct impact on the range of vehicle. Most
+of FWD have short to medium range and are also cost effective. It can also be observed that both RWD and AWD<br> can reach 
+higher top speeds due to the fact that these vehicles have proper weight and power distribution.
+<br>Moreover it can be seen that Battery capacity and Range are very strong correlated. This means more is the battery
+capacity of the vehicle, more will be its range
+"""
+
+dashboard3.add_annotation(
+    x=0.05,  # X coordinate of the annotation (0 to 1)
+    y=0.0,  # Y coordinate of the annotation (0 to 1)
+    text=text1,
+    showarrow=False,  # Set to True to show an arrow pointing to the annotation
+    font=dict(size=12, color="Gold"),  # Customize the font size and color
+    xref="paper",  # Specify the reference point for the X coordinate (can be "paper" or "x")
+    yref="paper",  # Specify the reference point for the Y coordinate (can be "paper" or "y")
+    align="center",  # Specify the alignment of the text within the annotation box
+    bgcolor="black",  # Specify the background color of the annotation box
+    bordercolor="black",  # Specify the border color of the annotation box
+    borderwidth=1,  # Specify the border width of the annotation box
+)
+
+# Show the dashboard
+dashboard3.update_xaxes(zeroline=False)
+dashboard3.update_yaxes(zeroline=False)
+
+dashboard3.show()
+dashboard3.write_html('dashboard3.html')
+
+
+# ----------------- dashboard - 4 ----------------- #
+# Create the Plotly figure
+dashboard4 = go.Figure()
+
+# Add the image trace
+dashboard4.add_layout_image(
+    source=image6,
+    xref="x",
+    yref="y",
+    x=-1,  # X coordinate of the image
+    y=4,  # Y coordinate of the image
+    sizex=3.5,  # Width of the image
+    sizey=4,  # Height of the image
+    sizing="contain",
+    opacity=1.0,
+    layer="below"
+)
+
+dashboard4.add_layout_image(
+    source=image7,
+    xref="x",
+    yref="y",
+    x=-1,  # X coordinate of the image
+    y=2.1,  # Y coordinate of the image
+    sizex=7,  # Width of the image
+    sizey=4,  # Height of the image
+    sizing="contain",
+    opacity=1.0,
+    layer="below"
+)
+
+dashboard4.add_layout_image(
+    source=image8,
+    xref="x",
+    yref="y",
+    x=2.5,  # X coordinate of the image
+    y=4,  # Y coordinate of the image
+    sizex=3.5,  # Width of the image
+    sizey=4,  # Height of the image
+    sizing="contain",
+    opacity=1.0,
+    layer="below"
+)
+
+# Update layout if needed
+dashboard4.update_layout(
+    title='EV Market Analysis - Dashboard 4',
+    height=1200,
+    showlegend=True,
+    template='plotly_dark',
+    autosize=True,
+    xaxis=dict(showgrid=False),
+    yaxis=dict(showgrid=False),
+    legend=dict(
+        x=1.1,
+        y=1.05,
+        orientation='h',
+        bgcolor='rgba(0,0,0,0)',
+        xanchor='right',
+        yanchor='top'
+    )
+)
+
+# Show the dashboard
+dashboard4.update_xaxes(zeroline=False)
+dashboard4.update_yaxes(zeroline=False)
+
+dashboard4.show()
+dashboard4.write_html('dashboard4.html')
+
+
